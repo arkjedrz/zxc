@@ -4,7 +4,6 @@ mod command_resolver;
 mod command_runner;
 mod def_file_finder;
 
-use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
 use cli::build_cli;
@@ -35,18 +34,6 @@ fn main() {
             for id in subcommand_args.ids() {
                 let value: &String = subcommand_args.get_one(id.as_str()).unwrap();
                 arguments.insert(id.to_string(), value.to_string());
-            }
-            // TODO: validate that all required parameters are defined.
-            // TODO: either default is defined, or parameter is required.
-            match &command_def.arguments {
-                Some(required_params) => {
-                    let defined_keys = arguments.keys();
-                    let required_keys = required_params.keys();
-                    if required_keys.cmp(defined_keys) != Ordering::Equal {
-                        panic!("Not all required parameters are set");
-                    }
-                }
-                None => (),
             }
 
             // Resolve command.
