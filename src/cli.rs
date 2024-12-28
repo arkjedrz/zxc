@@ -68,10 +68,20 @@ fn build_subcommand(cmd_name: &String, cmd_data: &CommandDef) -> Command {
     cmd
 }
 
+fn build_external_dir_command() -> Command {
+    // Create command.
+    Command::new("external_dir")
+        .about("Print path to the external definition file directory for current working directory")
+}
+
 pub fn build_cli(commands: &CommandDefs) -> Command {
     // Create base `clap` command.
     let mut main_command = command!().subcommand_required(true);
-    // Add subcommands.
+
+    // Add `external_dir` subcommand.
+    main_command = main_command.subcommand(build_external_dir_command());
+
+    // Add loaded subcommands.
     for (name, data) in commands {
         let subcommand = build_subcommand(name, &data);
         main_command = main_command.subcommand(subcommand);

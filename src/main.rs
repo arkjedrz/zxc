@@ -2,6 +2,7 @@ mod cli;
 mod command_defs;
 mod command_resolver;
 mod command_runner;
+mod config;
 mod def_file_finder;
 
 use std::collections::BTreeMap;
@@ -10,11 +11,18 @@ use cli::build_cli;
 use command_defs::load_command_definitions;
 use command_resolver::resolve_command;
 use command_runner::run_command;
-use def_file_finder::find_definition_files;
+use config::Config;
+use def_file_finder::{find_definition_files, get_external_dir};
 
 fn main() {
+    // Initialize and load configuration.
+    let config = Config::new().expect("Failed to init");
+
     // Find definition files.
-    let definition_files = find_definition_files();
+    let definition_files = find_definition_files(&config);
+    if definition_files.is_empty() {
+        panic!("No definition files found");
+    }
 
     // Load command data.
     let loaded_commands = load_command_definitions(definition_files);
@@ -24,6 +32,13 @@ fn main() {
     let cli_args = cli_command.get_matches();
 
     match cli_args.subcommand() {
+        Some((subcommand_name, _)) if subcommand_name == "external_dir" => {
+            let external_dir = get_external_dir(&config);
+            let external_dir_str = external_dir
+                .to_str()
+                .expect("Failed to convert path to string");
+            println!("{}", external_dir_str);
+        }
         Some((subcommand_name, subcommand_args)) => {
             // Get command definition.
             let command_def = loaded_commands.get(subcommand_name).unwrap();

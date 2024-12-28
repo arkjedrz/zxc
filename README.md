@@ -7,8 +7,32 @@ This means it is able to run commands defined in a YAML file.
 
 ### Definition files location
 
-Two file names are currently supported: `zxc.yml` and `.zxc.yml`.
-Those are expected to be located in current working directory.
+Definition files are searched for in two places:
+
+- local - from CWD.
+- external - from `$HOME/.zxc/<base64-encoded CWD path>`.
+
+Following file names are allowed:
+
+- `.zxc.yml`
+- `.zxc.yaml`
+- `.zxc`
+- `zxc.yml`
+- `zxc.yaml`
+
+It's expected that at least one definition file is found.
+It's not allowed to have multiple definition files in one directory.
+
+External definition file takes precedence.
+This might cause command to be overwritten if defined in both files.
+
+#### External definition file location
+
+Path to a directory that should contain definition file can be determined:
+
+```bash
+zxc external_dir
+```
 
 ### Definition file
 
@@ -16,6 +40,7 @@ Following fields are used to define a command:
 
 - command name is used as a key
 - `command` - command to run
+  - disallowed names: `external_dir`, `help`
 - `description` - optional command description
 - `arguments` - optional arguments
 
