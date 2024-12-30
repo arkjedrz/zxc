@@ -3,6 +3,22 @@
 `zxc` is a directory-oriented command runner.
 This means it is able to run commands defined in a YAML file.
 
+## Pre-commit setup
+
+[pre-commit](https://pre-commit.com/) tool is used.
+
+To install pre-commit hooks:
+
+```bash
+pre-commit install
+```
+
+To run pre-commit hooks:
+
+```bash
+pre-commit run -a
+```
+
 ## Basics of operation
 
 ### Definition files location
