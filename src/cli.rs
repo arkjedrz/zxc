@@ -9,12 +9,9 @@ fn build_subcommand(cmd_name: &String, cmd_data: &CommandDef) -> Command {
 
     // Add 'about' section - containing description and command.
     let mut about_string = String::new();
-    match &cmd_data.description {
-        Some(description) => {
-            let formatted = format!("{description}\n\n");
-            about_string.push_str(&formatted);
-        }
-        None => (),
+    if let Some(description) = &cmd_data.description {
+        let formatted = format!("{description}\n\n");
+        about_string.push_str(&formatted);
     }
 
     let formatted_cmd = format!("Command: {}", &cmd_data.command);
@@ -73,7 +70,7 @@ pub fn build_cli(commands: &CommandDefs) -> Command {
     let mut main_command = command!().subcommand_required(true);
     // Add subcommands.
     for (name, data) in commands {
-        let subcommand = build_subcommand(name, &data);
+        let subcommand = build_subcommand(name, data);
         main_command = main_command.subcommand(subcommand);
     }
     main_command

@@ -3,13 +3,13 @@ use std::collections::BTreeMap;
 
 /// Resolve shell command.
 pub fn resolve_command(
-    unresolved_command: &String,
+    unresolved_command: &str,
     arguments: &BTreeMap<String, String>,
 ) -> Result<String, Error> {
     // Create environment and add command template.
     const ENV_NAME: &str = "command";
     let mut env = Environment::new();
-    match env.add_template(ENV_NAME, &unresolved_command) {
+    match env.add_template(ENV_NAME, unresolved_command) {
         Ok(_) => (),
         Err(e) => return Err(e),
     };

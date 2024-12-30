@@ -3,7 +3,7 @@ use std::io::Error;
 use std::process::{Command, ExitStatus};
 
 /// Spawn new process based on provided resolved command string.
-pub fn run_command(command: &String) -> Result<ExitStatus, Error> {
+pub fn run_command(command: &str) -> Result<ExitStatus, Error> {
     // Split shell command.
     let split_result = split(command).expect("Failed to split command");
     // Split command name and arguments.
@@ -19,6 +19,5 @@ pub fn run_command(command: &String) -> Result<ExitStatus, Error> {
     };
 
     // Wait for process to finish.
-    let wait_result = child.wait();
-    wait_result
+    child.wait()
 }

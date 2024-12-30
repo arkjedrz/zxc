@@ -31,30 +31,27 @@ fn main() {
     let cli_command = build_cli(&loaded_commands);
     let cli_args = cli_command.get_matches();
 
-    match cli_args.subcommand() {
-        Some((subcommand_name, subcommand_args)) => {
-            // Get command definition.
-            let command_def = loaded_commands.get(subcommand_name).unwrap();
+    if let Some((subcommand_name, subcommand_args)) = cli_args.subcommand() {
+        // Get command definition.
+        let command_def = loaded_commands.get(subcommand_name).unwrap();
 
-            // Process required command data.
-            let unresolved_command = &command_def.command;
-            let mut arguments: BTreeMap<String, String> = BTreeMap::new();
-            for id in subcommand_args.ids() {
-                let value: &String = subcommand_args.get_one(id.as_str()).unwrap();
-                arguments.insert(id.to_string(), value.to_string());
-            }
-
-            // Resolve command.
-            let resolved_command = resolve_command(&unresolved_command, &arguments).unwrap();
-
-            // Run command.
-            let run_status = run_command(&resolved_command);
-            let exit_code = run_status
-                .unwrap()
-                .code()
-                .expect("Process terminated by signal");
-            std::process::exit(exit_code);
+        // Process required command data.
+        let unresolved_command = &command_def.command;
+        let mut arguments: BTreeMap<String, String> = BTreeMap::new();
+        for id in subcommand_args.ids() {
+            let value: &String = subcommand_args.get_one(id.as_str()).unwrap();
+            arguments.insert(id.to_string(), value.to_string());
         }
-        None => (),
+
+        // Resolve command.
+        let resolved_command = resolve_command(unresolved_command, &arguments).unwrap();
+
+        // Run command.
+        let run_status = run_command(&resolved_command);
+        let exit_code = run_status
+            .unwrap()
+            .code()
+            .expect("Process terminated by signal");
+        std::process::exit(exit_code);
     }
 }
