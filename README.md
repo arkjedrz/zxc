@@ -1,7 +1,7 @@
 # `zxc` - directory-oriented command runner
 
 `zxc` is a directory-oriented command runner.
-This means it is able to run commands defined in a YAML file.
+This means it is able to run commands defined by YAML files.
 
 ## Pre-commit setup
 
