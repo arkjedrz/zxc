@@ -2,6 +2,7 @@ mod cli;
 mod command_defs;
 mod command_resolver;
 mod command_runner;
+mod config;
 mod def_file_finder;
 
 use std::collections::BTreeMap;
@@ -10,11 +11,18 @@ use cli::build_cli;
 use command_defs::load_command_definitions;
 use command_resolver::resolve_command;
 use command_runner::run_command;
+use config::Config;
 use def_file_finder::find_definition_files;
 
 fn main() {
+    // Initialize and load configuration.
+    let config = Config::new().expect("Failed to init");
+
     // Find definition files.
-    let definition_files = find_definition_files();
+    let definition_files = find_definition_files(&config);
+    if definition_files.is_empty() {
+        panic!("No definition files found");
+    }
 
     // Load command data.
     let loaded_commands = load_command_definitions(definition_files);
