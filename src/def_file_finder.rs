@@ -1,9 +1,9 @@
 use crate::config::Config;
 use std::io::{Error, ErrorKind};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Find definition file in specified directory.
-fn find_def_file(directory_path: &PathBuf) -> Result<Option<PathBuf>, Error> {
+fn find_def_file(directory_path: &Path) -> Result<Option<PathBuf>, Error> {
     // Check path exists.
     if !directory_path.exists() {
         return Err(Error::from(ErrorKind::NotFound));
@@ -55,7 +55,7 @@ fn get_external_dir(config: &Config) -> PathBuf {
 /// Find definition files.
 /// - local - from CWD.
 /// - external - from `$HOME/.zxc/<mirrored CWD path>`.
-/// E.g., if CWD is `/opt/app/` then `$HOME/.zxc/opt/app/` should be used.
+///   E.g., if CWD is `/opt/app/` then `$HOME/.zxc/opt/app/` should be used.
 ///
 /// Following file names are allowed:
 /// - `.zxc.yml`
@@ -72,9 +72,8 @@ pub fn find_definition_files(config: &Config) -> Vec<PathBuf> {
 
     // Get local definition file.
     let local_def_file = find_def_file(&config.cwd).expect("Failed to find local definition file");
-    match local_def_file {
-        Some(path) => found_files.push(path),
-        None => (),
+    if let Some(path) = local_def_file {
+        found_files.push(path);
     }
 
     // Get external dir path.
@@ -82,9 +81,8 @@ pub fn find_definition_files(config: &Config) -> Vec<PathBuf> {
     if external_dir.exists() && external_dir.is_dir() {
         let external_def_file =
             find_def_file(&external_dir).expect("Failed to find external definition file");
-        match external_def_file {
-            Some(path) => found_files.push(path),
-            None => (),
+        if let Some(path) = external_def_file {
+            found_files.push(path);
         }
     }
     found_files
