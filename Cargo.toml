@@ -13,3 +13,7 @@ serde_yaml = "0.9"
 clap = { version = "4.5.23", features = ["derive", "string", "cargo"] }
 minijinja = "2.5.0"
 run_script = "0.11.0"
+
+[dev-dependencies]
+tempfile = "3.6"
+fsio = "0.4.0"

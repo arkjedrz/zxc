@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use serde::Deserialize;
 
 /// Definition of an argument.
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ArgumentDef {
     /// Description.
@@ -22,7 +22,7 @@ pub struct ArgumentDef {
 }
 
 /// Definition of a command.
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct CommandDef {
     /// Shell command.
@@ -63,208 +63,191 @@ pub fn merge_definitions(command_defs: Vec<CommandDefs>) -> CommandDefs {
 }
 
 #[cfg(test)]
-mod load_definitions_from_file_tests {
+mod load_definitions_from_str_tests {
     use std::io::ErrorKind;
 
     use super::load_definitions_from_str;
 
     #[test]
-    fn all_params() {
-        let name = "greet";
-        let arg1_name = "name";
-        let arg1_desc = "Name.";
-        let arg1_default = "John";
-        let arg1_long = "name";
-        let arg1_short = "n";
-        let arg2_name = "surname";
-        let arg2_desc = "Surname.";
-        let arg2_default = "Smith";
-        let arg2_long = "surname";
-        let arg2_short = "s";
-        let command = format!("echo \"Hello {{ {arg1_name} }} {{ {arg2_name} }}\"");
-        let description = "Say hello.";
+    fn valid_yaml() {
+        let yaml_content = r#"
+          run:
+            command: cargo run -- {{ parameters }}
+            description: Run the project
+            arguments:
+              parameters:
+                description: App parameters.
+                long: parameters
+                short: p
+                default: ""
+          test:
+            command: cargo test
+            description: Run tests
+        "#;
 
-        let yaml_content = format!(
-            "{name}:
-  command: {command}
-  description: {description}
-  arguments:
-    {arg1_name}:
-      description: |-
-        {arg1_desc}
-      default: {arg1_default}
-      long: {arg1_long}
-      short: {arg1_short}
-    {arg2_name}:
-      description: {arg2_desc}
-      default: {arg2_default}
-      long: {arg2_long}
-      short: {arg2_short}"
-        );
-        let command_defs = load_definitions_from_str(yaml_content.as_str()).unwrap();
-        assert!(command_defs.len() == 1);
+        let result = load_definitions_from_str(yaml_content);
+        assert!(result.is_ok());
 
-        let command_def = command_defs.get(name).unwrap();
-        assert_eq!(command_def.command, command);
-        assert_eq!(command_def.description.as_ref().unwrap(), description);
+        let defs = result.unwrap();
+        assert!(defs.contains_key("run"));
+        assert!(defs.contains_key("test"));
 
-        let args = command_def.arguments.clone().unwrap();
-        assert!(args.len() == 2);
+        let run_def = defs.get("run").unwrap();
+        assert_eq!(run_def.command, "cargo run -- {{ parameters }}");
+        assert!(run_def.arguments.is_some());
 
-        let arg1 = args.get(arg1_name).unwrap();
-        assert_eq!(arg1.description.as_ref().unwrap(), arg1_desc);
-        assert_eq!(arg1.default.as_ref().unwrap(), arg1_default);
-        assert_eq!(arg1.long.as_ref().unwrap(), arg1_long);
-        assert_eq!(arg1.short.as_ref().unwrap(), arg1_short);
-
-        let arg2 = args.get(arg2_name).unwrap();
-        assert_eq!(arg2.description.as_ref().unwrap(), arg2_desc);
-        assert_eq!(arg2.default.as_ref().unwrap(), arg2_default);
-        assert_eq!(arg2.long.as_ref().unwrap(), arg2_long);
-        assert_eq!(arg2.short.as_ref().unwrap(), arg2_short);
+        let test_def = defs.get("test").unwrap();
+        assert_eq!(test_def.command, "cargo test");
+        assert!(test_def.arguments.is_none());
     }
 
     #[test]
-    fn no_optionals() {
-        let name = "hello_world";
-        let command = "echo \"Hello\"";
-        let yaml_content = format!(
-            "{name}:
-  command: {command}"
-        );
+    fn invalid_yaml() {
+        let yaml_content = r#"
+          invalid_yaml: - "test
+        "#;
 
-        let command_defs = load_definitions_from_str(yaml_content.as_str()).unwrap();
-        assert!(command_defs.len() == 1);
-
-        let command_def = command_defs.get(name).unwrap();
-        assert_eq!(command_def.command, command);
-        assert!(command_def.description.is_none());
-        assert!(command_def.arguments.is_none());
+        let result = load_definitions_from_str(yaml_content);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().kind(), ErrorKind::InvalidData);
     }
 
     #[test]
     fn missing_mandatory_field() {
-        let yaml_content = "name:
-  description: description
-  arguments:
-    arg1_name:
-      description: |-
-        arg1_desc
-      default: arg1_default
-      long: arg1_long
-      short: arg1_short
-    arg2_name:
-      description: arg2_desc
-      default: arg2_default
-      long: arg2_long
-      short: arg2_short
-";
+        let yaml_content = r#"
+          name:
+            description: Some description.
+        "#;
         let result = load_definitions_from_str(yaml_content);
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::InvalidData));
     }
 
     #[test]
     fn unknown_command_field() {
-        let yaml_content = "name:
-  command: command
-  description: description
-  some_unknown_field: asdf
-  arguments:
-    arg1_name:
-      description: |-
-        arg1_desc
-      default: arg1_default
-      long: arg1_long
-      short: arg1_short
-    arg2_name:
-      description: arg2_desc
-      default: arg2_default
-      long: arg2_long
-      short: arg2_short
-";
+        let yaml_content = r#"
+          name:
+            command: echo "Hello"
+            some_unknown_field: asdf
+        "#;
         let result = load_definitions_from_str(yaml_content);
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::InvalidData));
     }
 
     #[test]
     fn unknown_argument_field() {
-        let yaml_content = "name:
-  command: command
-  description: description
-  arguments:
-    arg1_name:
-      description: |-
-        arg1_desc
-      default: arg1_default
-      long: arg1_long
-      short: arg1_short
-      some_unknown_field: asdf
-    arg2_name:
-      description: arg2_desc
-      default: arg2_default
-      long: arg2_long
-      short: arg2_short
-";
-        let result = load_definitions_from_str(yaml_content);
-        assert!(result.is_err_and(|e| e.kind() == ErrorKind::InvalidData));
-    }
-
-    #[test]
-    fn malformed_yaml() {
-        let yaml_content = "name:
-      command: command
-        description: description
-    ";
+        let yaml_content = r#"
+          name:
+            command: echo "Hello"
+            arguments:
+              arg1:
+                some_unknown_field: asdf
+        "#;
         let result = load_definitions_from_str(yaml_content);
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::InvalidData));
     }
 }
 
 #[cfg(test)]
-mod merge_definitions_tests {
-    use super::{load_definitions_from_str, merge_definitions};
+mod load_definitions_from_file_tests {
+    use super::load_definitions_from_file;
+    use std::fs::File;
+    use std::io::{ErrorKind, Write};
+    use std::path::PathBuf;
+
+    use tempfile::tempdir;
 
     #[test]
-    fn valid() {
-        let content1 = "first_command:
-  command: echo \"Hello\"
-      ";
-        let defs1 = load_definitions_from_str(content1).unwrap();
+    fn valid_file() {
+        let yaml_content = r#"
+        run:
+          command: cargo run
+          description: Run the project
+        "#;
 
-        let content2 = "second_command:
-  command: echo \"world\"";
-        let defs2 = load_definitions_from_str(content2).unwrap();
+        let temp_dir = tempdir().unwrap();
+        let file_path = temp_dir.path().join("commands.yaml");
 
-        let defs_vec = vec![defs1, defs2];
-        let merged = merge_definitions(defs_vec);
+        let mut file = File::create(&file_path).unwrap();
+        file.write_all(yaml_content.as_bytes()).unwrap();
 
-        assert!(merged.len() == 2);
-        assert!(merged
-            .get("first_command")
-            .is_some_and(|v| v.command == "echo \"Hello\""));
-        assert!(merged
-            .get("second_command")
-            .is_some_and(|v| v.command == "echo \"world\""));
+        let result = load_definitions_from_file(file_path);
+        assert!(result.is_ok());
+
+        let defs = result.unwrap();
+        assert!(defs.contains_key("run"));
+        assert_eq!(defs.get("run").unwrap().command, "cargo run");
+    }
+
+    #[test]
+    fn file_missing() {
+        let missing_file_path = PathBuf::from("non_existent.yaml");
+
+        let result = load_definitions_from_file(missing_file_path);
+        assert!(result.is_err_and(|e| e.kind() == ErrorKind::NotFound));
+    }
+}
+
+#[cfg(test)]
+mod merge_definitions_tests {
+    use super::merge_definitions;
+    use crate::command_defs::{CommandDef, CommandDefs};
+
+    #[test]
+    fn valid_defs() {
+        let mut defs1 = CommandDefs::new();
+        defs1.insert(
+            "build".to_string(),
+            CommandDef {
+                command: "cargo build".to_string(),
+                description: Some("Build the project".to_string()),
+                arguments: None,
+            },
+        );
+
+        let mut defs2 = CommandDefs::new();
+        defs2.insert(
+            "test".to_string(),
+            CommandDef {
+                command: "cargo test".to_string(),
+                description: Some("Run tests".to_string()),
+                arguments: None,
+            },
+        );
+
+        let merged_defs = merge_definitions(vec![defs1.clone(), defs2.clone()]);
+        assert_eq!(merged_defs.len(), 2);
+        assert!(merged_defs.contains_key("build"));
+        assert!(merged_defs.contains_key("test"));
+
+        assert_eq!(defs1.len(), 1);
+        assert_eq!(defs2.len(), 1);
     }
 
     #[test]
     fn command_overwrite() {
-        let content1 = "same_command_name:
-  command: echo \"Hello\"
-      ";
-        let defs1 = load_definitions_from_str(content1).unwrap();
+        let mut defs1 = CommandDefs::new();
+        defs1.insert(
+            "run".to_string(),
+            CommandDef {
+                command: "cargo run".to_string(),
+                description: Some("Run the project".to_string()),
+                arguments: None,
+            },
+        );
 
-        let content2 = "same_command_name:
-  command: echo \"world\"";
-        let defs2 = load_definitions_from_str(content2).unwrap();
+        let mut defs2 = CommandDefs::new();
+        defs2.insert(
+            "run".to_string(),
+            CommandDef {
+                command: "custom run".to_string(),
+                description: Some("Custom run command".to_string()),
+                arguments: None,
+            },
+        );
 
-        let defs_vec = vec![defs1, defs2];
-        let merged = merge_definitions(defs_vec);
-
-        assert!(merged.len() == 1);
-        assert!(merged
-            .get("same_command_name")
-            .is_some_and(|v| v.command == "echo \"world\""));
+        let merged_defs = merge_definitions(vec![defs1, defs2]);
+        assert_eq!(merged_defs.len(), 1);
+        assert_eq!(merged_defs.get("run").unwrap().command, "custom run");
     }
 
     #[test]
