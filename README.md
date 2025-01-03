@@ -33,7 +33,6 @@ Following file names are allowed:
 
 - `.zxc.yml`
 - `.zxc.yaml`
-- `.zxc`
 - `zxc.yml`
 - `zxc.yaml`
 

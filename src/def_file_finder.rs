@@ -15,7 +15,7 @@ fn find_def_file(directory_path: &Path) -> Result<Option<PathBuf>, Error> {
     }
 
     // Iterate through allowed file names.
-    const ALLOWED_NAMES: [&str; 5] = [".zxc.yml", ".zxc.yaml", ".zxc", "zxc.yml", "zxc.yaml"];
+    const ALLOWED_NAMES: [&str; 4] = [".zxc.yml", ".zxc.yaml", "zxc.yml", "zxc.yaml"];
     let mut found_files = vec![];
     for name in ALLOWED_NAMES {
         let file_path = directory_path.join(name);
@@ -60,7 +60,6 @@ fn get_external_dir(config: &Config) -> PathBuf {
 /// Following file names are allowed:
 /// - `.zxc.yml`
 /// - `.zxc.yaml`
-/// - `.zxc`
 /// - `zxc.yml`
 /// - `zxc.yaml`
 ///
