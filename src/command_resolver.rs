@@ -16,10 +16,7 @@ pub fn resolve_command(
     };
 
     // Get command template.
-    let template = match env.get_template(ENV_NAME) {
-        Ok(template) => template,
-        Err(e) => return Err(e),
-    };
+    let template = env.get_template(ENV_NAME)?;
 
     // Render output string based on provided arguments.
     let ctx = Value::from_iter(arguments.iter());

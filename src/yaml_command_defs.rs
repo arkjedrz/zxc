@@ -5,57 +5,50 @@ use std::path::PathBuf;
 
 use serde::Deserialize;
 
-/// Definition of an argument.
+/// YAML-faced definition of an argument.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct ArgumentDef {
-    /// Description.
-    pub description: Option<String>,
+pub struct YamlArgumentDef {
+    /// Flags.
+    pub flags: Vec<String>,
     /// Default value.
     pub default: Option<String>,
-    /// Long version of parameter.
-    /// Argument name is used by default.
-    pub long: Option<String>,
-    /// Short version of parameter.
-    /// Must be single character long.
-    pub short: Option<String>,
+    /// Description of an argument.
+    pub description: Option<String>,
 }
 
-/// Definition of a command.
+/// YAML-faced definition of a command.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct CommandDef {
+pub struct YamlCommandDef {
     /// Shell command.
     pub command: String,
     /// Command description.
     pub description: Option<String>,
     /// Arguments used by the command.
-    pub arguments: Option<BTreeMap<String, ArgumentDef>>,
+    pub arguments: Option<BTreeMap<String, YamlArgumentDef>>,
 }
 
 /// Available command definitions.
-pub type CommandDefs = BTreeMap<String, CommandDef>;
+pub type YamlCommandDefs = BTreeMap<String, YamlCommandDef>;
 
-/// Load command definitions from a string.
-pub fn load_definitions_from_str(definition_file_content: &str) -> Result<CommandDefs, Error> {
+/// Load YAML command definitions from a string.
+pub fn load_yaml_defs_from_str(definition_file_content: &str) -> Result<YamlCommandDefs, Error> {
     match serde_yaml::from_str(definition_file_content) {
         Ok(commands) => Ok(commands),
-        Err(_) => Err(Error::from(ErrorKind::InvalidData)),
+        Err(e) => Err(Error::new(ErrorKind::InvalidData, e)),
     }
 }
 
 /// Load command definitions from a file.
-pub fn load_definitions_from_file(definition_file_path: PathBuf) -> Result<CommandDefs, Error> {
-    let definition_file_content = match fs::read_to_string(definition_file_path) {
-        Ok(content) => content,
-        Err(e) => return Err(e),
-    };
-
-    load_definitions_from_str(&definition_file_content)
+pub fn load_yaml_defs_from_file(definition_file_path: PathBuf) -> Result<YamlCommandDefs, Error> {
+    let definition_file_content = fs::read_to_string(definition_file_path)?;
+    load_yaml_defs_from_str(&definition_file_content)
 }
 
-pub fn merge_definitions(command_defs: Vec<CommandDefs>) -> CommandDefs {
-    let mut merged_defs = CommandDefs::new();
+/// Merge YAML command definitions.
+pub fn merge_yaml_defs(command_defs: Vec<YamlCommandDefs>) -> YamlCommandDefs {
+    let mut merged_defs = YamlCommandDefs::new();
     for mut def in command_defs {
         merged_defs.append(&mut def);
     }
@@ -63,10 +56,10 @@ pub fn merge_definitions(command_defs: Vec<CommandDefs>) -> CommandDefs {
 }
 
 #[cfg(test)]
-mod load_definitions_from_str_tests {
+mod load_yaml_defs_from_str_tests {
     use std::io::ErrorKind;
 
-    use super::load_definitions_from_str;
+    use super::load_yaml_defs_from_str;
 
     #[test]
     fn valid_yaml() {
@@ -76,16 +69,16 @@ mod load_definitions_from_str_tests {
             description: Run the project
             arguments:
               parameters:
+                flags:
+                  - --parameters
                 description: App parameters.
-                long: parameters
-                short: p
                 default: ""
           test:
             command: cargo test
             description: Run tests
         "#;
 
-        let result = load_definitions_from_str(yaml_content);
+        let result = load_yaml_defs_from_str(yaml_content);
         assert!(result.is_ok());
 
         let defs = result.unwrap();
@@ -107,7 +100,7 @@ mod load_definitions_from_str_tests {
           invalid_yaml: - "test
         "#;
 
-        let result = load_definitions_from_str(yaml_content);
+        let result = load_yaml_defs_from_str(yaml_content);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().kind(), ErrorKind::InvalidData);
     }
@@ -118,7 +111,7 @@ mod load_definitions_from_str_tests {
           name:
             description: Some description.
         "#;
-        let result = load_definitions_from_str(yaml_content);
+        let result = load_yaml_defs_from_str(yaml_content);
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::InvalidData));
     }
 
@@ -129,7 +122,7 @@ mod load_definitions_from_str_tests {
             command: echo "Hello"
             some_unknown_field: asdf
         "#;
-        let result = load_definitions_from_str(yaml_content);
+        let result = load_yaml_defs_from_str(yaml_content);
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::InvalidData));
     }
 
@@ -142,14 +135,14 @@ mod load_definitions_from_str_tests {
               arg1:
                 some_unknown_field: asdf
         "#;
-        let result = load_definitions_from_str(yaml_content);
+        let result = load_yaml_defs_from_str(yaml_content);
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::InvalidData));
     }
 }
 
 #[cfg(test)]
-mod load_definitions_from_file_tests {
-    use super::load_definitions_from_file;
+mod load_yaml_defs_from_file_tests {
+    use super::load_yaml_defs_from_file;
     use std::fs::File;
     use std::io::{ErrorKind, Write};
     use std::path::PathBuf;
@@ -170,7 +163,7 @@ mod load_definitions_from_file_tests {
         let mut file = File::create(&file_path).unwrap();
         file.write_all(yaml_content.as_bytes()).unwrap();
 
-        let result = load_definitions_from_file(file_path);
+        let result = load_yaml_defs_from_file(file_path);
         assert!(result.is_ok());
 
         let defs = result.unwrap();
@@ -182,39 +175,39 @@ mod load_definitions_from_file_tests {
     fn file_missing() {
         let missing_file_path = PathBuf::from("non_existent.yaml");
 
-        let result = load_definitions_from_file(missing_file_path);
+        let result = load_yaml_defs_from_file(missing_file_path);
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::NotFound));
     }
 }
 
 #[cfg(test)]
-mod merge_definitions_tests {
-    use super::merge_definitions;
-    use crate::command_defs::{CommandDef, CommandDefs};
+mod merge_yaml_defs_tests {
+    use super::merge_yaml_defs;
+    use crate::yaml_command_defs::{YamlCommandDef, YamlCommandDefs};
 
     #[test]
     fn valid_defs() {
-        let mut defs1 = CommandDefs::new();
+        let mut defs1 = YamlCommandDefs::new();
         defs1.insert(
             "build".to_string(),
-            CommandDef {
+            YamlCommandDef {
                 command: "cargo build".to_string(),
                 description: Some("Build the project".to_string()),
                 arguments: None,
             },
         );
 
-        let mut defs2 = CommandDefs::new();
+        let mut defs2 = YamlCommandDefs::new();
         defs2.insert(
             "test".to_string(),
-            CommandDef {
+            YamlCommandDef {
                 command: "cargo test".to_string(),
                 description: Some("Run tests".to_string()),
                 arguments: None,
             },
         );
 
-        let merged_defs = merge_definitions(vec![defs1.clone(), defs2.clone()]);
+        let merged_defs = merge_yaml_defs(vec![defs1.clone(), defs2.clone()]);
         assert_eq!(merged_defs.len(), 2);
         assert!(merged_defs.contains_key("build"));
         assert!(merged_defs.contains_key("test"));
@@ -225,27 +218,27 @@ mod merge_definitions_tests {
 
     #[test]
     fn command_overwrite() {
-        let mut defs1 = CommandDefs::new();
+        let mut defs1 = YamlCommandDefs::new();
         defs1.insert(
             "run".to_string(),
-            CommandDef {
+            YamlCommandDef {
                 command: "cargo run".to_string(),
                 description: Some("Run the project".to_string()),
                 arguments: None,
             },
         );
 
-        let mut defs2 = CommandDefs::new();
+        let mut defs2 = YamlCommandDefs::new();
         defs2.insert(
             "run".to_string(),
-            CommandDef {
+            YamlCommandDef {
                 command: "custom run".to_string(),
                 description: Some("Custom run command".to_string()),
                 arguments: None,
             },
         );
 
-        let merged_defs = merge_definitions(vec![defs1, defs2]);
+        let merged_defs = merge_yaml_defs(vec![defs1, defs2]);
         assert_eq!(merged_defs.len(), 1);
         assert_eq!(merged_defs.get("run").unwrap().command, "custom run");
     }
@@ -253,7 +246,7 @@ mod merge_definitions_tests {
     #[test]
     fn empty_input() {
         let empty_defs = vec![];
-        let merged_defs = merge_definitions(empty_defs);
+        let merged_defs = merge_yaml_defs(empty_defs);
         assert!(merged_defs.is_empty());
     }
 }

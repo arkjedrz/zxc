@@ -44,20 +44,29 @@ This might cause command to be overwritten if defined in both files.
 
 ### Definition file
 
+#### Defining a command
+
 Following fields are used to define a command:
 
 - command name is used as a key
-- `command` - command to run
-- `description` - optional command description
-- `arguments` - optional arguments
+- `command` - shell command to run - mandatory
+- `description` - description - optional
+- `arguments` - arguments - optional
+
+#### Defining an argument
 
 Following fields are used to define an argument:
 
 - argument name is used as a key
-- `description` - optional argument description
-- `default` - optional default value - if not defined, then argument is required
-- `long` - optional long version of parameter, argument name is used by default
-- `short` - optional short version of parameter, must be single character long
+- `flags` - list of flags - mandatory
+  - named arguments contain flags starting with `-` and/or `--`:
+    - multiple short/long flags cannot be defined for the same argument
+    - 1 or 2 flags are expected
+  - positional arguments contain flag not starting with `-` or `--`.
+  - argument cannot be simultanously named and positional
+- `default` - default value - optional
+  - argument is considered required if default value is not specified
+- `description` - description - optional
 
 ### Argument substitution
 
@@ -74,11 +83,10 @@ greet:
   description: Greets specified person.
   arguments:
     name:
+      flags: ["-n", "--name"]
+      default: User
       description: |-
         Name to greet.
-      default: User
-      long: name
-      short: n
 ```
 
 Use following command to print `Hello John!`:

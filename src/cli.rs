@@ -1,76 +1,65 @@
-use crate::command_defs;
-
+use crate::zxc_command_defs::{ArgumentType, FlagType, ZxcCommandDef, ZxcCommandDefs};
 use clap::{command, Arg, Command};
-use command_defs::{CommandDef, CommandDefs};
 
 /// Build `Command` object for a subcommand.
-fn build_subcommand(cmd_name: &String, cmd_data: &CommandDef) -> Command {
-    let mut cmd = Command::new(cmd_name);
+fn build_subcommand(zxc_command_def: &ZxcCommandDef) -> Command {
+    let mut cli_command = Command::new(zxc_command_def.name.clone());
 
     // Add 'about' section - containing description and command.
     let mut about_string = String::new();
-    if let Some(description) = &cmd_data.description {
+    if let Some(description) = &zxc_command_def.description {
         let formatted = format!("{description}\n\n");
         about_string.push_str(&formatted);
     }
 
-    let formatted_cmd = format!("Command: {}", &cmd_data.command);
-    about_string.push_str(&formatted_cmd);
+    let formatted_shell_command = format!("Command: {}", &zxc_command_def.command);
+    about_string.push_str(&formatted_shell_command);
 
-    cmd = cmd.about(about_string);
+    cli_command = cli_command.about(about_string);
 
     // Add arguments.
-    cmd = match &cmd_data.arguments {
-        Some(arguments) => {
-            for (arg_name, arg_data) in arguments {
-                let mut arg = Arg::new(arg_name);
+    for zxc_argument_def in &zxc_command_def.arguments {
+        let mut cli_argument = Arg::new(zxc_argument_def.name.clone());
 
-                // Add long parameter version.
-                arg = match &arg_data.long {
-                    Some(long) => arg.long(long),
-                    None => arg.long(arg_name),
-                };
-
-                // Add short parameter version.
-                arg = match &arg_data.short {
-                    Some(short) => {
-                        if short.len() != 1 {
-                            panic!("Short parameter version must be 1 character long");
-                        }
-                        let first_char = short.chars().next().unwrap();
-                        arg.short(first_char)
+        // Add flags.
+        for zxc_flag in &zxc_argument_def.flags {
+            cli_argument = match zxc_flag {
+                ArgumentType::Named(flag_type) => match flag_type {
+                    FlagType::Short(x) => {
+                        let x = x.as_str().chars().next().unwrap();
+                        cli_argument.short(x)
                     }
-                    None => arg,
-                };
-
-                // Add description.
-                arg = match &arg_data.description {
-                    Some(description) => arg.help(description),
-                    None => arg,
-                };
-
-                // Add default value.
-                arg = match &arg_data.default {
-                    Some(default) => arg.default_value(default),
-                    None => arg.required(true),
-                };
-
-                cmd = cmd.arg(arg);
+                    FlagType::Long(x) => cli_argument.long(x),
+                },
+                // Nothing needs to be done for positional - argument name is used.
+                ArgumentType::Positional => cli_argument,
             }
-            cmd
         }
-        None => cmd,
-    };
 
-    cmd
+        // Add default value.
+        cli_argument = match &zxc_argument_def.default {
+            Some(x) => cli_argument.default_value(x),
+            None => cli_argument.required(true),
+        };
+
+        // Add description.
+        cli_argument = match &zxc_argument_def.description {
+            Some(x) => cli_argument.help(x),
+            None => cli_argument,
+        };
+
+        cli_command = cli_command.arg(cli_argument);
+    }
+
+    cli_command
 }
 
-pub fn build_cli(commands: &CommandDefs) -> Command {
+pub fn build_cli(zxc_command_defs: &ZxcCommandDefs) -> Command {
     // Create base `clap` command.
     let mut main_command = command!().subcommand_required(true);
     // Add subcommands.
-    for (name, data) in commands {
-        let subcommand = build_subcommand(name, data);
+    for zxc_command_def in zxc_command_defs {
+        let subcommand = build_subcommand(zxc_command_def);
         main_command = main_command.subcommand(subcommand);
     }
     main_command
