@@ -15,10 +15,7 @@ impl Config {
     /// If `$HOME/.zxc` directory doesn't exist - create such.
     pub fn new() -> Result<Self, Error> {
         // Get current working directory.
-        let cwd = match std::env::current_dir() {
-            Ok(path) => path,
-            Err(e) => return Err(e),
-        };
+        let cwd = std::env::current_dir()?;
 
         // Get `$HOME`.
         let home_env = match std::env::var("HOME") {
