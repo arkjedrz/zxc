@@ -5,6 +5,8 @@ edition = "2021"
 description = """
 `zxc` is a directory-oriented command runner.
 This means it is able to run commands defined by YAML files."""
+repository = "https://github.com/arkjedrz/zxc"
+license = "MIT"
 authors = ["Arkadiusz Jędrzejewski"]
 
 [dependencies]
@@ -18,3 +20,8 @@ run_script = "0.11"
 tempfile = "3.16"
 fsio = "0.4"
 serial_test = "3.2"
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/zxc", dest = "/usr/bin/zxc", mode = "755" },
+]

@@ -3,22 +3,6 @@
 `zxc` is a directory-oriented command runner.
 This means it is able to run commands defined by YAML files.
 
-## Pre-commit setup
-
-[pre-commit](https://pre-commit.com/) tool is used.
-
-To install pre-commit hooks:
-
-```bash
-pre-commit install
-```
-
-To run pre-commit hooks:
-
-```bash
-pre-commit run -a
-```
-
 ## Basics of operation
 
 ### Definition files location
@@ -93,4 +77,45 @@ Use following command to print `Hello John!`:
 
 ```bash
 zxc greet --name John
+```
+
+## Development
+
+```bash
+pip install pre-commit
+cargo install cargo-deb cargo-generate-rpm cargo-aur
+```
+
+### Pre-commit setup
+
+Install and run hooks:
+
+```bash
+pre-commit install
+pre-commit run -a
+```
+
+## Build and install
+
+```bash
+cargo build --release
+cargo install --path .
+cargo test
+```
+
+### Create packages
+
+Application must be built and stripped:
+
+```bash
+cargo build --release
+strip -s target/release/zxc
+```
+
+Create packages:
+
+```bash
+cargo deb
+cargo generate-rpm
+cargo aur
 ```
