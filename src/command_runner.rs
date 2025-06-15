@@ -1,14 +1,14 @@
 use run_script::types::ScriptError::{Description, FsIOError, IOError};
 use run_script::{spawn, IoOptions, ScriptError, ScriptOptions};
-use std::io::{Error, ErrorKind};
+use std::io::Error;
 use std::process::ExitStatus;
 
 /// Convert all errors to `std::io::Error`.
 fn match_error(script_error: ScriptError) -> Error {
     match script_error {
         IOError(io_error) => io_error,
-        FsIOError(fsio_error) => Error::new(ErrorKind::Other, fsio_error.to_string()),
-        Description(description) => Error::new(ErrorKind::Other, description),
+        FsIOError(fsio_error) => Error::other(fsio_error.to_string()),
+        Description(description) => Error::other(description),
     }
 }
 
