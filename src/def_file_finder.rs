@@ -26,10 +26,7 @@ fn find_def_file(directory_path: &Path) -> Result<Option<PathBuf>, Error> {
 
     // Disallow multiple found.
     if found_files.len() > 1 {
-        return Err(Error::new(
-            ErrorKind::Other,
-            "Multiple definition files found",
-        ));
+        return Err(Error::other("Multiple definition files found"));
     }
 
     // Check if any found.
