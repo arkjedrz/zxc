@@ -1,5 +1,5 @@
 use run_script::types::ScriptError::{Description, FsIOError, IOError};
-use run_script::{spawn, IoOptions, ScriptError, ScriptOptions};
+use run_script::{IoOptions, ScriptError, ScriptOptions, spawn};
 use std::io::Error;
 use std::process::ExitStatus;
 

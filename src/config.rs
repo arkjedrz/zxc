@@ -55,7 +55,7 @@ mod config_tests {
     fn create_app_home() {
         let temp_home = tempdir().unwrap();
         let home_path = temp_home.path();
-        env::set_var("HOME", home_path);
+        unsafe { env::set_var("HOME", home_path) };
 
         let zxc_path = home_path.join(".zxc");
         assert!(!zxc_path.exists());
@@ -71,7 +71,7 @@ mod config_tests {
     fn create_app_home_fail() {
         let temp_home = tempdir().unwrap();
         let home_path = temp_home.path();
-        env::set_var("HOME", home_path);
+        unsafe { env::set_var("HOME", home_path) };
 
         let zxc_path = home_path.join(".zxc");
         fs::File::create(&zxc_path).unwrap();
@@ -88,7 +88,7 @@ mod config_tests {
     fn app_home_exists() {
         let temp_home = tempdir().unwrap();
         let home_path = temp_home.path();
-        env::set_var("HOME", home_path);
+        unsafe { env::set_var("HOME", home_path) };
 
         let zxc_path = home_path.join(".zxc");
         fs::create_dir(&zxc_path).unwrap();
@@ -103,12 +103,12 @@ mod config_tests {
     #[serial]
     fn missing_home_env() {
         let original_home = env::var("HOME").unwrap();
-        env::remove_var("HOME");
+        unsafe { env::remove_var("HOME") };
 
         let result = Config::new();
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::NotFound));
 
-        env::set_var("HOME", original_home);
+        unsafe { env::set_var("HOME", original_home) };
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use crate::zxc_command_defs::{ArgumentType, FlagType, ZxcCommandDef, ZxcCommandDefs};
-use clap::{command, Arg, Command};
+use clap::{Arg, Command, command};
 
 /// Build `Command` object for a subcommand.
 fn build_subcommand(zxc_command_def: &ZxcCommandDef) -> Command {
