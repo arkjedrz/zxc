@@ -1,3 +1,4 @@
+use std::env::consts::OS;
 use std::fs::create_dir;
 use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
@@ -10,20 +11,34 @@ pub struct Config {
     pub app_home: PathBuf,
 }
 
+fn home_env_name() -> &'static str {
+    if OS == "windows" {
+        "USERPROFILE"
+    } else {
+        "HOME"
+    }
+}
+
 impl Config {
     /// Create configuration.
-    /// If `$HOME/.zxc` directory doesn't exist - create such.
+    /// If `$<HOME>>/.zxc` directory doesn't exist - create such.
     pub fn new() -> Result<Self, Error> {
         // Get current working directory.
         let cwd = std::env::current_dir()?;
 
-        // Get `$HOME`.
-        let home_env = match std::env::var("HOME") {
+        // Get `$<HOME>`.
+        let env_name = home_env_name();
+        let home_env = match std::env::var(env_name) {
             Ok(value) => value,
-            Err(_) => return Err(Error::new(ErrorKind::NotFound, "$HOME not found")),
+            Err(_) => {
+                return Err(Error::new(
+                    ErrorKind::NotFound,
+                    format!("${} not found", env_name),
+                ));
+            }
         };
 
-        // Get app home - `$HOME/.zxc`.
+        // Get app home - `$<HOME>/.zxc`.
         let app_home = PathBuf::from(home_env).join(".zxc");
 
         // Create app home if not found.
@@ -43,9 +58,10 @@ impl Config {
 #[cfg(test)]
 mod config_tests {
     // Tests must be run serially, as they interact with filesystem and env vars.
-    use super::Config;
+    use super::{Config, home_env_name};
     use serial_test::serial;
     use std::env;
+    use std::env::consts::OS;
     use std::fs;
     use std::io::ErrorKind;
     use tempfile::tempdir;
@@ -55,7 +71,8 @@ mod config_tests {
     fn create_app_home() {
         let temp_home = tempdir().unwrap();
         let home_path = temp_home.path();
-        unsafe { env::set_var("HOME", home_path) };
+        let env_name = home_env_name();
+        unsafe { env::set_var(env_name, home_path) };
 
         let zxc_path = home_path.join(".zxc");
         assert!(!zxc_path.exists());
@@ -71,7 +88,8 @@ mod config_tests {
     fn create_app_home_fail() {
         let temp_home = tempdir().unwrap();
         let home_path = temp_home.path();
-        unsafe { env::set_var("HOME", home_path) };
+        let env_name = home_env_name();
+        unsafe { env::set_var(env_name, home_path) };
 
         let zxc_path = home_path.join(".zxc");
         fs::File::create(&zxc_path).unwrap();
@@ -88,7 +106,8 @@ mod config_tests {
     fn app_home_exists() {
         let temp_home = tempdir().unwrap();
         let home_path = temp_home.path();
-        unsafe { env::set_var("HOME", home_path) };
+        let env_name = home_env_name();
+        unsafe { env::set_var(env_name, home_path) };
 
         let zxc_path = home_path.join(".zxc");
         fs::create_dir(&zxc_path).unwrap();
@@ -102,18 +121,24 @@ mod config_tests {
     #[test]
     #[serial]
     fn missing_home_env() {
-        let original_home = env::var("HOME").unwrap();
-        unsafe { env::remove_var("HOME") };
+        let env_name = home_env_name();
+        let original_home = env::var(env_name).unwrap();
+        unsafe { env::remove_var(env_name) };
 
         let result = Config::new();
         assert!(result.is_err_and(|e| e.kind() == ErrorKind::NotFound));
 
-        unsafe { env::set_var("HOME", original_home) };
+        unsafe { env::set_var(env_name, original_home) };
     }
 
     #[test]
     #[serial]
     fn invalid_current_dir() {
+        // Skip test for Windows.
+        if OS == "windows" {
+            return;
+        }
+
         let original_cwd = env::current_dir().unwrap();
         let temp_cwd = tempdir().unwrap();
         let cwd_path = temp_cwd.path();

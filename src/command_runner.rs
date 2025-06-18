@@ -74,6 +74,7 @@ mod match_error_tests {
 #[cfg(test)]
 mod run_command_tests {
     use super::run_command;
+    use std::env::consts::OS;
 
     #[test]
     fn success() {
@@ -105,6 +106,7 @@ mod run_command_tests {
         assert!(result.is_ok());
 
         let status = result.unwrap();
-        assert_eq!(status.code().unwrap(), 127);
+        let expected = if OS == "windows" { 1 } else { 127 };
+        assert_eq!(status.code().unwrap(), expected);
     }
 }
