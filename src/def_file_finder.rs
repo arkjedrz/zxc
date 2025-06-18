@@ -1,4 +1,5 @@
 use crate::config::Config;
+use std::env::consts::OS;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
@@ -38,21 +39,33 @@ fn find_def_file(directory_path: &Path) -> Result<Option<PathBuf>, Error> {
     Ok(Some(found_files[0].clone()))
 }
 
-/// Returns path to `$HOME/.zxc/<mirrored CWD path>`.
+/// Returns path to `$<HOME>/.zxc/<mirrored CWD path>`.
 fn get_external_dir(config: &Config) -> PathBuf {
     let mut app_home = config.app_home.clone();
-    let cwd = config.cwd.as_os_str();
+    let cwd = &config.cwd;
 
     let external_dir = app_home.as_mut_os_string();
-    external_dir.push(cwd);
-
+    if OS != "windows" {
+        let cwd = cwd.as_os_str();
+        external_dir.push(cwd);
+    } else {
+        // ¯\(°_o)/¯
+        let cwd = cwd.as_os_str().to_str().unwrap().to_string();
+        if cwd.chars().nth(1).unwrap() == ':' {
+            let (left, right) = cwd.split_at(1);
+            let mod_cwd = String::from(left) + &right[1..];
+            external_dir.push(mod_cwd);
+        } else {
+            external_dir.push(cwd);
+        }
+    }
     PathBuf::from(external_dir.as_os_str())
 }
 
 /// Find definition files.
 /// - local - from CWD.
-/// - external - from `$HOME/.zxc/<mirrored CWD path>`.
-///   E.g., if CWD is `/opt/app/` then `$HOME/.zxc/opt/app/` should be used.
+/// - external - from `$<HOME>/.zxc/<mirrored CWD path>`.
+///   E.g., if CWD is `/opt/app/` then `$<HOME>/.zxc/opt/app/` should be used.
 ///
 /// Following file names are allowed:
 /// - `.zxc.yml`
