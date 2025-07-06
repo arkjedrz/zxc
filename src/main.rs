@@ -48,7 +48,7 @@ fn main() -> Result<(), Error> {
         let zxc_command_def = match find_zxc_command_def(zxc_command_defs, subcommand_name) {
             Some(x) => x,
             None => {
-                let error_message = format!("Command definition not found: {}", subcommand_name);
+                let error_message = format!("Command definition not found: {subcommand_name}");
                 return Err(Error::new(ErrorKind::NotFound, error_message));
             }
         };

@@ -74,7 +74,7 @@ pub fn load_zxc_defs(yaml_command_defs: YamlCommandDefs) -> Result<ZxcCommandDef
                             Some(x) => ArgumentType::Named(FlagType::Long(x.to_string())),
                             None => {
                                 let error_message =
-                                    format!("Failed to strip '--' prefix from: {}", yaml_flag_str);
+                                    format!("Failed to strip '--' prefix from: {yaml_flag_str}");
                                 return Err(Error::new(ErrorKind::InvalidData, error_message));
                             }
                         };
@@ -84,8 +84,7 @@ pub fn load_zxc_defs(yaml_command_defs: YamlCommandDefs) -> Result<ZxcCommandDef
                     else if yaml_flag_str.starts_with("-") {
                         if yaml_flag_str.len() != 2 {
                             let error_message = format!(
-                                "Short flag must consist of two characters: {}",
-                                yaml_flag_str
+                                "Short flag must consist of two characters: {yaml_flag_str}"
                             );
                             return Err(Error::new(ErrorKind::InvalidData, error_message));
                         }
@@ -94,7 +93,7 @@ pub fn load_zxc_defs(yaml_command_defs: YamlCommandDefs) -> Result<ZxcCommandDef
                             Some(x) => ArgumentType::Named(FlagType::Short(x.to_string())),
                             None => {
                                 let error_message =
-                                    format!("Failed to strip '-' prefix from: {}", yaml_flag_str);
+                                    format!("Failed to strip '-' prefix from: {yaml_flag_str}");
                                 return Err(Error::new(ErrorKind::InvalidData, error_message));
                             }
                         };

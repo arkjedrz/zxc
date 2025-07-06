@@ -33,7 +33,7 @@ impl Config {
             Err(_) => {
                 return Err(Error::new(
                     ErrorKind::NotFound,
-                    format!("${} not found", env_name),
+                    format!("${env_name} not found"),
                 ));
             }
         };
