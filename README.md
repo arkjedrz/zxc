@@ -35,6 +35,33 @@ zxc greet --name world
 
 ![demo](./docs/demo.svg)
 
+## Comparison to other tools
+
+There are other great tools solving similar issues.
+Use what suits You best!
+
+### `just`
+
+[Link to the project](https://github.com/casey/just)
+
+`just` is similar due to being project-oriented.
+
+- `zxc` uses YAML files for definitions, which makes it easy to read and write.
+- `just` uses syntax inspired by `make` - arguably higher entry level.
+- `zxc` support local and external definition files, but working directory is expected to be same as definition file location.
+- `just` can be used outside of a directory containing `justfile`.
+- `zxc` is currently supporting one-liners, while `just` can run multiple commands.
+- `zxc` generates CLIs with native app feel.
+- `just` is a mature project.
+
+### `navi`
+
+[Link to the project](https://github.com/denisidoro/navi)
+
+- `zxc` is directory- or project-oriented.
+- `navi` is a cheatsheet for CLI usage - not attached to specific tool or project.
+- `navi` uses custom syntax - arguably higher entry level.
+
 ## Installation
 
 ### From source
